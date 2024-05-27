@@ -1098,6 +1098,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   getMatchupScore(pokemon: Pokemon): number {
     const types = this.getTypes(true);
     const enemyTypes = pokemon.getTypes(true, true);
+
+    //const outspeed = (this.isActive(true) ? this.getBattleStat(Stat.SPD, pokemon) >= pokemon.getBattleStat(Stat.SPD, this) : false);
     const outspeed = (this.isActive(true) ? this.getBattleStat(Stat.SPD, pokemon) : this.getStat(Stat.SPD)) <= pokemon.getBattleStat(Stat.SPD, this);
     let atkScore = pokemon.getAttackTypeEffectiveness(types[0], this) * (outspeed ? 1.25 : 1);
     let defScore = 1 / Math.max(this.getAttackTypeEffectiveness(enemyTypes[0], pokemon), 0.25);

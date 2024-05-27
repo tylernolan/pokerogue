@@ -19,7 +19,7 @@ import { ModifierPoolType, getDefaultModifierTypeForTier, getEnemyModifierTypesF
 import AbilityBar from "./ui/ability-bar";
 import { BlockItemTheftAbAttr, DoubleBattleChanceAbAttr, IncrementMovePriorityAbAttr, applyAbAttrs } from "./data/ability";
 import { allAbilities } from "./data/ability";
-import Battle, { BattleType, FixedBattleConfig, fixedBattles } from "./battle";
+import Battle, { BattleType, FixedBattleConfig, fixedBattles, fixedBattles_abridged } from "./battle";
 import { GameMode, GameModes, gameModes } from "./game-mode";
 import FieldSpritePipeline from "./pipelines/field-sprite";
 import SpritePipeline from "./pipelines/sprite";
@@ -751,7 +751,7 @@ export default class BattleScene extends SceneBase {
     this.seed = seed;
     this.rngCounter = 0;
     this.waveCycleOffset = this.getGeneratedWaveCycleOffset();
-    this.offsetGym = this.gameMode.isClassic && this.getGeneratedOffsetGym();
+    this.offsetGym = this.gameMode.isClassic && !this.gameMode.isAbridged && this.getGeneratedOffsetGym();
   }
 
   randBattleSeedInt(range: integer, min: integer = 0): integer {
@@ -863,15 +863,20 @@ export default class BattleScene extends SceneBase {
     let newDouble: boolean;
     let newBattleType: BattleType;
     let newTrainer: Trainer;
-
+    let fixedBattlesToCheck: FixedBattleConfigs;
     let battleConfig: FixedBattleConfig = null;
 
     this.resetSeed(newWaveIndex);
-
+    if (this.gameMode.isAbridged) {
+      fixedBattlesToCheck = fixedBattles_abridged;
+    } else {
+      fixedBattlesToCheck = fixedBattles;
+    }
     const playerField = this.getPlayerField();
 
-    if (this.gameMode.hasFixedBattles && fixedBattles.hasOwnProperty(newWaveIndex) && trainerData === undefined) {
-      battleConfig = fixedBattles[newWaveIndex];
+    if (this.gameMode.hasFixedBattles && fixedBattlesToCheck.hasOwnProperty(newWaveIndex) && trainerData === undefined) {
+      battleConfig = fixedBattlesToCheck[newWaveIndex];
+      console.log(battleConfig);
       newDouble = battleConfig.double;
       newBattleType = battleConfig.battleType;
       this.executeWithSeedOffset(() => newTrainer = battleConfig.getTrainer(this), (battleConfig.seedOffsetWaveIndex || newWaveIndex) << 8);
@@ -1324,10 +1329,15 @@ export default class BattleScene extends SceneBase {
     if (ignoreLevelCap) {
       return Number.MAX_SAFE_INTEGER;
     }
+
     const waveIndex = Math.ceil((this.currentBattle?.waveIndex || 1) / 10) * 10;
     const difficultyWaveIndex = this.gameMode.getWaveForDifficulty(waveIndex);
     const baseLevel = (1 + difficultyWaveIndex / 2 + Math.pow(difficultyWaveIndex / 25, 2)) * 1.2;
-    return Math.ceil(baseLevel / 2) * 2 + 2;
+    const ret = Math.ceil(baseLevel / 2) * 2 + 2;
+    if (this.gameMode.modeId === GameModes.CLASSIC_ABRIDGED && ret === 84) {
+      return 100;
+    }
+    return ret;
   }
 
   randomSpecies(waveIndex: integer, level: integer, fromArenaPool?: boolean, speciesFilter?: PokemonSpeciesFilter, filterAllEvolutions?: boolean): PokemonSpecies {

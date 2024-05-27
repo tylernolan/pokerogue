@@ -7,6 +7,7 @@ import { EvolutionItem, pokemonEvolutions } from "../data/pokemon-evolutions";
 import { Stat, getStatName } from "../data/pokemon-stat";
 import { tmPoolTiers, tmSpecies } from "../data/tms";
 import { Type } from "../data/type";
+import { GameModes } from "../game-mode";
 import PartyUiHandler, { PokemonMoveSelectFilter, PokemonSelectFilter } from "../ui/party-ui-handler";
 import * as Utils from "../utils";
 import { TempBattleStat, getTempBattleStatBoosterItemName, getTempBattleStatName } from "../data/temp-battle-stat";
@@ -1346,8 +1347,12 @@ const modifierPool: ModifierPool = {
     new WeightedModifierType(modifierTypes.LOCK_CAPSULE, 3),
     new WeightedModifierType(modifierTypes.SUPER_EXP_CHARM, 10),
     new WeightedModifierType(modifierTypes.FORM_CHANGE_ITEM, 18),
-    new WeightedModifierType(modifierTypes.MEGA_BRACELET, (party: Pokemon[]) => Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 50), 4) * 8, 32),
-    new WeightedModifierType(modifierTypes.DYNAMAX_BAND, (party: Pokemon[]) => Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 50), 4) * 8, 32),
+    new WeightedModifierType(modifierTypes.MEGA_BRACELET, (party: Pokemon[]) => (party[0].scene.gameMode.modeId === GameModes.CLASSIC_ABRIDGED ?
+      Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 25), 4)
+      : Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 50)), 4) * 8, 32),
+    new WeightedModifierType(modifierTypes.DYNAMAX_BAND, (party: Pokemon[]) => (party[0].scene.gameMode.modeId === GameModes.CLASSIC_ABRIDGED ?
+      Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 25), 4)
+      : Math.min(Math.ceil(party[0].scene.currentBattle.waveIndex / 50)), 4) * 8, 32),
   ].map(m => {
     m.setTier(ModifierTier.ROGUE); return m;
   }),
@@ -1549,6 +1554,7 @@ export function getModifierPoolForType(poolType: ModifierPoolType): ModifierPool
   return pool;
 }
 
+const tierWeights_abridged = [ 500 / 1024, 270 / 1024, 200 / 1024, 25 / 1024, 5 / 1024 ];
 const tierWeights = [ 769 / 1024, 192 / 1024, 48 / 1024, 12 / 1024, 1 / 1024 ];
 
 export function regenerateModifierPoolThresholds(party: Pokemon[], poolType: ModifierPoolType, rerollCount: integer = 0) {
@@ -1598,7 +1604,11 @@ export function regenerateModifierPoolThresholds(party: Pokemon[], poolType: Mod
     return [ t, Object.fromEntries(thresholds) ];
   })));
   for (const id of Object.keys(modifierTableData)) {
-    modifierTableData[id].totalPercent = Math.floor(modifierTableData[id].tierPercent * tierWeights[modifierTableData[id].tier] * 100) / 100;
+    if (party[0].scene.gameMode.isAbridged) {
+      modifierTableData[id].totalPercent = Math.floor(modifierTableData[id].tierPercent * tierWeights_abridged[modifierTableData[id].tier] * 100) / 100;
+    } else {
+      modifierTableData[id].totalPercent = Math.floor(modifierTableData[id].tierPercent * tierWeights[modifierTableData[id].tier] * 100) / 100;
+    }
     modifierTableData[id].tier = ModifierTier[modifierTableData[id].tier];
   }
   if (outputModifierData) {

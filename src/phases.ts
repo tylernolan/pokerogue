@@ -207,6 +207,13 @@ export class TitlePhase extends Phase {
               }
             },
             {
+              label: gameModes[GameModes.CLASSIC_ABRIDGED].getName(),
+              handler: () => {
+                setModeAndEnd(GameModes.CLASSIC_ABRIDGED);
+                return true;
+              }
+            },
+            {
               label: gameModes[GameModes.ENDLESS].getName(),
               handler: () => {
                 setModeAndEnd(GameModes.ENDLESS);
@@ -3685,13 +3692,14 @@ export class VictoryPhase extends PokemonPhase {
           }
         } else {
           const superExpWave = !this.scene.gameMode.isEndless ? (this.scene.offsetGym ? 0 : 20) : 10;
+          const expMod = this.scene.gameMode.isAbridged ? 20 : 30;
           if (this.scene.gameMode.isEndless && this.scene.currentBattle.waveIndex === 10) {
             this.scene.pushPhase(new ModifierRewardPhase(this.scene, modifierTypes.EXP_SHARE));
           }
-          if (this.scene.currentBattle.waveIndex <= 750 && (this.scene.currentBattle.waveIndex <= 500 || (this.scene.currentBattle.waveIndex % 30) === superExpWave)) {
+          if (this.scene.currentBattle.waveIndex <= 750 && (this.scene.currentBattle.waveIndex <= 500 || (this.scene.currentBattle.waveIndex % expMod) === superExpWave)) {
             this.scene.pushPhase(new ModifierRewardPhase(this.scene, (this.scene.currentBattle.waveIndex % 30) !== superExpWave || this.scene.currentBattle.waveIndex > 250 ? modifierTypes.EXP_CHARM : modifierTypes.SUPER_EXP_CHARM));
           }
-          if (this.scene.currentBattle.waveIndex <= 150 && !(this.scene.currentBattle.waveIndex % 50)) {
+          if (this.scene.currentBattle.waveIndex <= 150 && !(this.scene.currentBattle.waveIndex % 50) || (this.scene.gameMode.modeId === GameModes.CLASSIC_ABRIDGED && this.scene.currentBattle.waveIndex % 40 === 0)) {
             this.scene.pushPhase(new ModifierRewardPhase(this.scene, modifierTypes.GOLDEN_POKEBALL));
           }
           if (this.scene.gameMode.isEndless && !(this.scene.currentBattle.waveIndex % 50)) {
